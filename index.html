@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ラーメン店 退出チェック</title>
+    <meta name="robots" content="noindex,nofollow">
+    <title>ラーメン店 退出チェック管理システム</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background-color: #f0f2f5; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
@@ -11,50 +12,55 @@
         h2 { font-size: 1.1rem; color: #555; margin-top: 20px; background: #eee; padding: 5px 10px; border-radius: 5px; }
         .item { display: flex; align-items: center; margin: 15px 0; font-size: 1.1rem; cursor: pointer; }
         input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
-        button { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; margin-top: 20px; }
-        #result { text-align: center; margin-top: 15px; font-weight: bold; font-size: 1.2rem; }
+        .input-group { margin: 20px 0; }
+        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
+        button { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .view-btn { background: #007bff; margin-top: 10px; }
+        #history { margin-top: 20px; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px; }
+        .history-item { border-bottom: 1px solid #eee; padding: 5px 0; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🍜 退出時チェックリスト</h1>
+        <h1>🍜 退出チェック管理</h1>
+        
+        <div class="input-group">
+            <label>担当者名：</label>
+            <input type="text" id="userName" placeholder="自分の名前を入力">
+        </div>
+
         <div id="checklist"></div>
-        <button onclick="checkAll()">完了報告をして退勤</button>
-        <p id="result"></p>
+
+        <button onclick="submitData()">送信して記録する</button>
+        <button class="view-btn" onclick="fetchHistory()">過去の履歴を表示</button>
+        
+        <div id="history"></div>
     </div>
 
     <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz60F58Y1onUzPtDiUX5ytXfDnSQ0EQ8sOFa9L4RRwvJ4bfSlzsx0_iR984zJZ37mxy/exec";
+
         const sections = [
-            { title: "1番手（厨房）", items: ["ガスの元栓を閉めたか", "スープ・肉・野菜をしまったか", "水道を閉めたか", "麺残量を記入したか"] },
-            { title: "ホール", items: ["箸・醤油・マヨを補充したか", "生姜をしまったか", "券売機・売上速報・鍵閉め完了", "背脂保温スイッチを切ったか", "テーブル全拭き（調味料よけて）"] },
-            { title: "洗い場", items: ["ハンドソープ・洗剤の補充", "ゴミ捨て完了"] }
+            { title: "1番手", items: ["ガスの元栓", "スープ・肉・野菜", "水道", "麺残量記入"] },
+            { title: "ホール", items: ["箸・醤油・マヨ", "生姜収納", "券売機・鍵閉め", "背脂スイッチ", "テーブル全拭き"] },
+            { title: "洗い場", items: ["補充完了", "ゴミ捨て"] }
         ];
 
+        // チェックリスト表示
         const listDiv = document.getElementById('checklist');
         sections.forEach(sec => {
             listDiv.innerHTML += `<h2>${sec.title}</h2>`;
             sec.items.forEach((item, idx) => {
                 const id = `${sec.title}-${idx}`;
-                listDiv.innerHTML += `
-                    <label class="item" for="${id}">
-                        <input type="checkbox" id="${id}">
-                        ${item}
-                    </label>
-                `;
+                listDiv.innerHTML += `<label class="item"><input type="checkbox" id="${id}">${item}</label>`;
             });
         });
 
-        function checkAll() {
+        // データを送信する
+        async function submitData() {
+            const userName = document.getElementById('userName').value;
+            if (!userName) return alert("名前を入力してください");
+
             const checkboxes = document.querySelectorAll('input[type="checkbox"]');
             const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            const resultP = document.getElementById('result');
-            if (allChecked) {
-                resultP.innerHTML = "<span style='color:green;'>✅ 全項目完了！お疲れ様でした！</span>";
-                alert("お疲れ様でした！完璧な引き継ぎです。");
-            } else {
-                resultP.innerHTML = "<span style='color:red;'>❌ 未完了があります！確認してください。</span>";
-            }
-        }
-    </script>
-</body>
-</html>
+            const status = allChecked
