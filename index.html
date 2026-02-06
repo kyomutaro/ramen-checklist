@@ -4,63 +4,183 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex,nofollow">
-    <title>ラーメン店 退出チェック管理システム</title>
+    <title>ラーメン店 退出チェック管理</title>
     <style>
         body { font-family: -apple-system, sans-serif; padding: 15px; background-color: #f0f2f5; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
         h1 { color: #e44d26; font-size: 1.5rem; text-align: center; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         h2 { font-size: 1.1rem; color: #555; margin-top: 20px; background: #eee; padding: 5px 10px; border-radius: 5px; }
-        .item { display: flex; align-items: center; margin: 15px 0; font-size: 1.1rem; cursor: pointer; }
+        .item { display: flex; align-items: center; margin: 15px 0; font-size: 1.0rem; cursor: pointer; border-bottom: 1px dashed #eee; padding-bottom: 10px; }
         input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
         .input-group { margin: 20px 0; }
-        input[type="text"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; margin-top: 10px; cursor: pointer; }
-        .view-btn { background: #007bff; margin-top: 10px; }
-        #history { margin-top: 20px; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px; }
-        .history-item { border-bottom: 1px solid #eee; padding: 5px 0; }
+        input[type="text"] { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
+        button { width: 100%; background: #28a745; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 1.2rem; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        button:active { background: #218838; }
+        .view-btn { background: #007bff; margin-top: 10px; font-size: 1rem; }
+        #history { margin-top: 20px; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.6; }
+        .history-item { border-bottom: 1px solid #eee; padding: 8px 0; }
+        .error-msg { color: red; font-weight: bold; text-align: center; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <div class="card">
+    <div class="card" id="mainCard" style="display:none;">
         <h1>🍜 退出チェック管理</h1>
         
         <div class="input-group">
             <label>担当者名：</label>
-            <input type="text" id="userName" placeholder="自分の名前を入力">
+            <input type="text" id="userName" placeholder="名前を入力してください">
         </div>
 
         <div id="checklist"></div>
 
-        <button onclick="submitData()">送信して記録する</button>
-        <button class="view-btn" onclick="fetchHistory()">過去の履歴を表示</button>
+        <button onclick="submitData()">✅ 送信して記録する</button>
+        <button class="view-btn" onclick="fetchHistory()">📋 過去の履歴を表示</button>
         
         <div id="history"></div>
     </div>
 
     <script>
+        // ==========================================
+        //  設定エリア
+        // ==========================================
+        
+        // ★ここにGASのウェブアプリURLを貼り付けてください（ダブルクォーテーションを消さないこと！）
         const GAS_URL = "https://script.google.com/macros/s/AKfycbz60F58Y1onUzPtDiUX5ytXfDnSQ0EQ8sOFa9L4RRwvJ4bfSlzsx0_iR984zJZ37mxy/exec";
 
+        // ★合言葉の設定（ここを変えるとパスワードが変わります）
+        const SECRET_PASS = "こまじろう"; 
+
+        // ==========================================
+        //  プログラム本体
+        // ==========================================
+
+        // 1. 合言葉チェック機能
+        (function checkPassword() {
+            const input = prompt("セキュリティ保護のため、合言葉を入力してください");
+            if (input === SECRET_PASS) {
+                document.getElementById('mainCard').style.display = 'block';
+            } else {
+                document.body.innerHTML = "<h2 class='error-msg'>🚫 合言葉が違います。<br>アクセスできません。</h2>";
+            }
+        })();
+
+        // 2. チェックリストの項目定義
         const sections = [
-            { title: "1番手", items: ["ガスの元栓", "スープ・肉・野菜", "水道", "麺残量記入"] },
-            { title: "ホール", items: ["箸・醤油・マヨ", "生姜収納", "券売機・鍵閉め", "背脂スイッチ", "テーブル全拭き"] },
-            { title: "洗い場", items: ["補充完了", "ゴミ捨て"] }
+            { 
+                title: "ホール", 
+                items: [
+                    "箸醤油、マヨ補充したか",
+                    "生姜閉まったか",
+                    "ホール床ゴミ落ちてないか",
+                    "券売機、売上速報、鍵閉め",
+                    "背脂保温スイッチ入っているか",
+                    "卵補充、おまけタッパー補充",
+                    "ゴミ片付け、トイレ電気",
+                    "テーブルの全拭き"
+                ]
+            },
+            { 
+                title: "洗い場", 
+                items: [
+                    "ハンドソープ、洗剤補充",
+                    "洗い場ゴミ落ちてないか"
+                ]
+            },
+            { 
+                title: "一番手", 
+                items: [
+                    "ガス元栓閉まっているか",
+                    "コールドテーブル綺麗か",
+                    "スープ、叉焼、野菜しまったか",
+                    "補充系終わっているか",
+                    "水道閉まっているか",
+                    "麵残量書いたか"
+                ]
+            }
         ];
 
-        // チェックリスト表示
+        // 3. チェックリストを画面に表示する処理
         const listDiv = document.getElementById('checklist');
         sections.forEach(sec => {
             listDiv.innerHTML += `<h2>${sec.title}</h2>`;
             sec.items.forEach((item, idx) => {
-                const id = `${sec.title}-${idx}`;
-                listDiv.innerHTML += `<label class="item"><input type="checkbox" id="${id}">${item}</label>`;
+                const id = `${sec.title}-${idx}`; // IDを一意にする
+                listDiv.innerHTML += `
+                    <label class="item" for="${id}">
+                        <input type="checkbox" id="${id}">
+                        ${item}
+                    </label>
+                `;
             });
         });
 
-        // データを送信する
+        // 4. データを送信する機能 (ReferenceError対策済)
         async function submitData() {
             const userName = document.getElementById('userName').value;
-            if (!userName) return alert("名前を入力してください");
+            if (!userName) return alert("名前を入力してください！");
+
+            // GASのURLが設定されていない場合のチェック
+            if (GAS_URL.includes("★")) return alert("エラー：プログラム内のGAS_URLが設定されていません！");
 
             const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            const status = allChecked
+            const total = checkboxes.length;
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            
+            // 全てチェックされているか判定
+            const allChecked = (total === checkedCount);
+            const status = allChecked ? "✅完了" : "⚠️未完了あり";
+
+            if (!confirm(`【担当：${userName}】\nステータス：${status}\n\nこの内容で送信しますか？`)) return;
+
+            const data = { user: userName, status: status };
+
+            try {
+                // 送信処理
+                await fetch(GAS_URL, {
+                    method: "POST",
+                    body: JSON.stringify(data)
+                });
+                alert("送信成功！お疲れ様でした。");
+                location.reload(); // 送信後に画面をリセット
+            } catch (e) {
+                console.error(e);
+                alert("送信に失敗しました。\nURLが正しいか、インターネットに繋がっているか確認してください。");
+            }
+        }
+
+        // 5. 履歴を読み込む機能
+        async function fetchHistory() {
+            const historyDiv = document.getElementById('history');
+            
+            // GASのURLチェック
+            if (GAS_URL.includes("★")) return alert("エラー：プログラム内のGAS_URLが設定されていません！");
+
+            historyDiv.innerHTML = "データを読み込んでいます...";
+            
+            try {
+                const response = await fetch(GAS_URL);
+                const data = await response.json();
+                
+                historyDiv.innerHTML = "<h3>📅 最近の記録（最新5件）</h3>";
+                
+                // 新しい順（逆順）にして、上から5つだけ表示
+                data.reverse().slice(0, 5).forEach(row => {
+                    // row[0]=日付, row[1]=名前, row[2]=状態
+                    const dateObj = new Date(row[0]);
+                    const dateStr = dateObj.toLocaleDateString() + " " + dateObj.getHours() + ":" + String(dateObj.getMinutes()).padStart(2, '0');
+                    
+                    historyDiv.innerHTML += `
+                        <div class="history-item">
+                            <div><b>${dateStr}</b> - ${row[1]}</div>
+                            <div style="color:${row[2].includes('完了') ? 'green' : 'red'}">${row[2]}</div>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                console.error(e);
+                historyDiv.innerHTML = "<p style='color:red'>履歴の読み込みに失敗しました。</p>";
+            }
+        }
+    </script>
+</body>
+</html>
