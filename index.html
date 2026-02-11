@@ -3,180 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex,nofollow">
-<title>ぶっ豚 閉店業務チェックリスト</title>
+<title>ぶっ豚チェックリスト</title>
 <style>
-    /* ★遊び心ポイント1：ここカラーコードを変えると、アプリ全体の色が変わります */
+    /* 全体の色設定 */
     :root {
-        --color-hall: #ff006a;     /* ホーるの色ピンク */
-        --color-kitchen: #dcd935;  /* 1番手の色（黄色） */
-        --color-wash: #33a4d1;     /* 洗い場の色（水色） */
-        --bg-color: #f4f6f7;       /* 背景色 */
+        --col-hall: #007bff;   /* ホール：青 */
+        --col-kitchen: #dc3545;/* 1番手：赤 */
+        --col-wash: #28a745;   /* 洗い場：緑 */
+        --bg: #f8f9fa;
     }
+    body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 10px; padding-bottom: 80px; color: #333; }
+    h1 { text-align: center; font-size: 1.2rem; margin: 10px 0; }
 
-    body { font-family: -apple-system, sans-serif; margin: 0; padding: 15px; background: var(--bg-color); padding-bottom: 80px; }
-    
-    h1 { text-align: center; color: #333; font-size: 1.2rem; margin-bottom: 5px; }
-    .date-display { text-align: center; font-size: 0.8rem; color: #666; margin-bottom: 20px; }
+    /* ログイン画面 */
+    #login-view { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .login-box { width: 100%; max-width: 400px; text-align: center; }
+    input[type="text"] { width: 80%; padding: 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+    .role-select-btn { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; font-size: 1rem; }
 
-    /* ダッシュボード（信号機） */
-    .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .status-card { background: white; padding: 10px; border-radius: 8px; text-align: center; border: 2px solid #ddd; opacity: 0.6; }
+    /* メイン画面：リストのコンテナ */
+    .list-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; }
     
-    /* 完了した時の見た目 */
-    .status-card.done { opacity: 1; border-color: currentColor; background-color: #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transform: scale(1.05); transition: 0.3s; }
-    
-    .role-icon { font-size: 2rem; display: block; }
-    .role-label { font-size: 0.8rem; font-weight: bold; display: block; }
-    .worker-name { font-size: 0.7rem; color: #555; display: block; margin-top: 5px; min-height: 1em; }
+    /* 各役割のヘッダー */
+    .role-header { padding: 10px 15px; font-weight: bold; color: white; display: flex; justify-content: space-between; align-items: center; }
+    .worker-label { font-size: 0.8rem; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-weight: normal; }
 
-    /* 入力フォーム（モーダル風） */
-    #login-area { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto; text-align: center; }
-    input[type="text"] { width: 80%; padding: 12px; font-size: 1rem; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 15px; text-align: center; }
+    /* チェックリスト項目 */
+    .check-group { padding: 5px 0; }
+    .check-item { display: flex; align-items: center; padding: 10px 15px; border-bottom: 1px solid #eee; transition: 0.2s; }
+    .check-item:last-child { border-bottom: none; }
     
-    .role-btn { width: 100%; padding: 15px; margin-bottom: 10px; border: none; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-    .role-btn:active { transform: scale(0.98); }
+    /* チェックボックスの見た目 */
+    input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; cursor: pointer; }
 
-    /* 本人確認画面 */
-    #confirm-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
-    .confirm-box { background: white; padding: 30px; border-radius: 10px; text-align: center; width: 80%; max-width: 300px; }
+    /* ★他人の役割の時のスタイル（薄くする・押せない） */
+    .disabled-area { opacity: 0.6; background-color: #f9f9f9; }
+    .disabled-area input[type="checkbox"] { cursor: not-allowed; }
+    .disabled-area .check-item:hover { background: none; }
+
+    /* 自分の役割の時のスタイル（強調） */
+    .active-area { border: 2px solid; background-color: #fff; }
+    .active-area.hall { border-color: var(--col-hall); }
+    .active-area.kitchen { border-color: var(--col-kitchen); }
+    .active-area.wash { border-color: var(--col-wash); }
+
+    /* 更新ボタン（フッター固定） */
+    .footer-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; padding: 10px; display: flex; justify-content: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); }
+    .sync-btn { width: 90%; max-width: 500px; padding: 12px; background: #333; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+    .sync-btn:active { transform: scale(0.98); }
+
+    /* 本人確認モーダル */
+    #confirm-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+    .confirm-box { background: white; padding: 25px; border-radius: 10px; text-align: center; width: 80%; max-width: 300px; }
     .confirm-btns { display: flex; gap: 10px; margin-top: 20px; }
     .confirm-btns button { flex: 1; padding: 10px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
-
-    /* チェックリスト */
-    #checklist-area { display: none; background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
-    .check-item { padding: 12px 0; border-bottom: 1px dashed #eee; display: flex; align-items: center; }
-    input[type="checkbox"] { transform: scale(1.5); margin-right: 15px; }
-
-    .submit-btn { width: 100%; padding: 15px; background: #333; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-top: 20px; cursor: pointer; }
-    .back-btn { background: #999; margin-top: 10px; }
-
-    /* 履歴エリア */
-    #history-area { display: none; max-width: 600px; margin: 0 auto; }
-    .history-item { background: white; padding: 10px; margin-bottom: 8px; border-radius: 8px; font-size: 0.9rem; border-left: 5px solid #ccc; }
-
-    /* 下部メニュー */
-    .bottom-menu { position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid #ddd; display: flex; height: 60px; }
-    .menu-item { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #999; font-size: 0.7rem; cursor: pointer; }
-    .menu-item.active { color: #e44d26; font-weight: bold; }
-    .menu-icon { font-size: 1.5rem; margin-bottom: 2px; }
 
 </style>
 </head>
 <body>
 
-    <h1>🐖🍜 チェックリスト</h1>
-    <div class="date-display" id="today-display"></div>
-
-    <div class="dashboard">
-        <div class="status-card" id="card-kitchen" style="color:var(--color-kitchen)">
-            <span class="role-icon">🌟</span>
-            <span class="role-label">1番手</span>
-            <span class="worker-name" id="name-kitchen">-</span>
+    <div id="login-view">
+        <div class="login-box">
+            <h2>🐖🍜 業務開始</h2>
+            <p>名前を入力してください</p>
+            <input type="text" id="input-name" placeholder="例：村上">
+            <p>今日の担当を選んでください</p>
+            <button class="role-select-btn" style="background:var(--col-kitchen)" onclick="preLogin('kitchen')">🔥 1番手（厨房）</button>
+            <button class="role-select-btn" style="background:var(--col-hall)" onclick="preLogin('hall')">🖐️ ホール</button>
+            <button class="role-select-btn" style="background:var(--col-wash)" onclick="preLogin('wash')">🧼 洗い場</button>
         </div>
-        <div class="status-card" id="card-hall" style="color:var(--color-hall)">
-            <span class="role-icon">🖐️</span>
-            <span class="role-label">ホール</span>
-            <span class="worker-name" id="name-hall">-</span>
-        </div>
-        <div class="status-card" id="card-wash" style="color:var(--color-wash)">
-            <span class="role-icon">🧼</span>
-            <span class="role-label">洗い場</span>
-            <span class="worker-name" id="name-wash">-</span>
-        </div>
-    </div>
-
-    <div id="login-area">
-        <p>あなたの名前を入力してください</p>
-        <input type="text" id="input-name" placeholder="例：村上">
-        
-        <p>担当を選んでスタート</p>
-        <button class="role-btn" style="background:var(--color-kitchen)" onclick="preLogin('kitchen')">🌟 1番手（厨房）</button>
-        <button class="role-btn" style="background:var(--color-hall)" onclick="preLogin('hall')">🖐️ ホール</button>
-        <button class="role-btn" style="background:var(--color-wash)" onclick="preLogin('wash')">🧼 洗い場</button>
     </div>
 
     <div id="confirm-modal">
         <div class="confirm-box">
-            <h3>本人確認</h3>
-            <p>あなたは本当に<br><b id="confirm-name-display" style="font-size:1.2rem; color:#e44d26;"></b><br>さんですか？</p>
+            <p>あなたは<br><b id="confirm-name" style="font-size:1.2rem"></b><br>さんですか？</p>
             <div class="confirm-btns">
-                <button style="background:#ddd;" onclick="closeConfirm()">いいえ</button>
-                <button style="background:#28a745; color:white;" onclick="executeLogin()">はい</button>
+                <button style="background:#ccc" onclick="closeConfirm()">いいえ</button>
+                <button style="background:#28a745; color:white" onclick="executeLogin()">はい</button>
             </div>
         </div>
     </div>
 
-    <div id="checklist-area">
-        <h2 id="checklist-title" style="margin-top:0; border-bottom:1px solid #eee;"></h2>
-        <div id="checklist-items"></div>
-        <button class="submit-btn" onclick="submitData()">✅ 完了報告して保存</button>
-        <button class="submit-btn back-btn" onclick="logout()">中断して戻る</button>
+    <div id="main-view" style="display:none;">
+        <h1>閉店チェック一覧</h1>
+        <p style="text-align:center; font-size:0.8rem; color:#666;" id="info-msg">更新ボタンでみんなの進捗を確認しよう</p>
+
+        <div id="area-kitchen" class="list-container disabled-area">
+            <div class="role-header" style="background:var(--col-kitchen)">
+                <span>🔥 1番手</span>
+                <span class="worker-label" id="user-kitchen">-</span>
+            </div>
+            <div class="check-group" id="list-kitchen"></div>
+        </div>
+
+        <div id="area-hall" class="list-container disabled-area">
+            <div class="role-header" style="background:var(--col-hall)">
+                <span>🖐️ ホール</span>
+                <span class="worker-label" id="user-hall">-</span>
+            </div>
+            <div class="check-group" id="list-hall"></div>
+        </div>
+
+        <div id="area-wash" class="list-container disabled-area">
+            <div class="role-header" style="background:var(--col-wash)">
+                <span>🧼 洗い場</span>
+                <span class="worker-label" id="user-wash">-</span>
+            </div>
+            <div class="check-group" id="list-wash"></div>
+        </div>
     </div>
 
-    <div id="history-area">
-        <h3 style="text-align:center;">📋 今日の履歴</h3>
-        <button onclick="loadHistory()" style="width:100%; padding:10px; margin-bottom:10px;">再読み込み</button>
-        <div id="history-list"></div>
-    </div>
-
-    <div class="bottom-menu">
-        <div class="menu-item active" onclick="showTab('main')">
-            <span class="menu-icon">📝</span>チェック
-        </div>
-        <div class="menu-item" onclick="showTab('history')">
-            <span class="menu-icon">📅</span>履歴
-        </div>
+    <div class="footer-bar" id="footer-bar" style="display:none;">
+        <button class="sync-btn" onclick="syncData()">🔄 状況を更新・共有する</button>
     </div>
 
 <script>
     // ★ここに新しいGASのURLを入れる★
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxPST3OG-wLqFzKoUO4FUi93kMUAHoAJxhVx9VQDtIz0NpCihjRY_8SCoqjqkRg5EI-/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyfCcEPJpPOpLB9wHqJA4fAKxNqldV_QrM06Hi5gyytHzFDGhPdCD3-qpU74pCbTTTo/exec";
 
-    // データ定義
+    // チェック項目定義
     const ROLES = {
-        kitchen: { name: "1番手", items: ["ガスの元栓閉", "コールドテーブル", "スープ・肉・野菜収納", "補充系完了", "水道閉", "麺残量記入"] },
-        hall: { name: "ホール", items: ["箸醤油、マヨ補充", "生姜閉まったか", "床ゴミ確認", "券売機・鍵閉め", "背脂SWオフ", "卵補充", "ゴミ・トイレ電気", "テーブル全拭き", "コップの片づけ"] },
-        wash: { name: "洗い場", items: ["洗剤・ハンドソープ補充", "ゴミ捨て完了", "シンク内清掃", "洗い場ゴミ確認"] }
+        kitchen: ["ガスの元栓閉めた", "コールドテーブル清掃", "スープ/肉/野菜収納", "補充系完了", "水道閉めた", "麺残量記入"],
+        hall: ["箸醤油・マヨ補充", "生姜閉まったか", "床ゴミ確認", "券売機・鍵閉め", "背脂SWオフ", "卵補充", "ゴミ・トイレ電気", "コップの片づけ", "テーブル全拭き"],
+        wash: ["洗剤・ハンドソープ補充", "ゴミ捨て完了", "シンク内清掃", "洗い場ゴミ確認"]
     };
 
-    let tempRole = ""; // ログイン前の仮置き
-    let currentRole = "";
-    let currentName = "";
+    let myRole = "";
+    let myName = "";
+    let tempRole = ""; // 本人確認用
+
+    // 今の全チェック状態（自分＋他人）
+    let globalState = {
+        kitchen: { checks: [], user: "" },
+        hall: { checks: [], user: "" },
+        wash: { checks: [], user: "" }
+    };
 
     // ------------------------------------------
-    // 1. 起動時の処理（翌朝クリア機能）
+    // 起動時のリセット処理（翌朝クリア）
     // ------------------------------------------
     window.onload = function() {
-        // 今日の日付を表示
-        const todayStr = new Date().toLocaleDateString('ja-JP');
-        document.getElementById('today-display').innerText = todayStr;
-
-        // 【ここがポイント】保存された日付と今日が違うなら、データを消す
+        const today = new Date().toLocaleDateString('ja-JP');
         const savedDate = localStorage.getItem('ramen_date');
-        if (savedDate !== todayStr) {
-            localStorage.removeItem('ramen_checks'); // チェック状況を消す
-            localStorage.setItem('ramen_date', todayStr); // 今日をセット
+
+        // 日付が変わっていたらローカルストレージをクリア
+        if (savedDate !== today) {
+            localStorage.removeItem('ramen_state');
+            localStorage.setItem('ramen_date', today);
+        } else {
+            // 同じ日なら保存データを読み込む
+            const savedState = localStorage.getItem('ramen_state');
+            if (savedState) globalState = JSON.parse(savedState);
         }
 
-        // 名前を復元
+        // 名前の復元
         const savedName = localStorage.getItem('ramen_name');
-        if(savedName) document.getElementById('input-name').value = savedName;
-
-        // ダッシュボード更新
-        loadHistory();
+        if (savedName) document.getElementById('input-name').value = savedName;
     };
 
     // ------------------------------------------
-    // 2. ログインフロー（本人確認あり）
+    // ログイン処理
     // ------------------------------------------
-    function preLogin(roleKey) {
+    function preLogin(role) {
         const name = document.getElementById('input-name').value;
         if (!name) return alert("名前を入力してください");
-        
-        // 仮保存してモーダルを出す
-        tempRole = roleKey;
-        document.getElementById('confirm-name-display').innerText = name;
+        tempRole = role;
+        document.getElementById('confirm-name').innerText = name;
         document.getElementById('confirm-modal').style.display = 'flex';
     }
 
@@ -185,189 +177,154 @@
     }
 
     function executeLogin() {
-        // 「はい」が押されたらログイン確定
-        currentName = document.getElementById('input-name').value;
-        currentRole = tempRole;
-        
-        // 名前をローカルストレージに保存（次回の手間を省く）
-        localStorage.setItem('ramen_name', currentName);
+        myRole = tempRole;
+        myName = document.getElementById('input-name').value;
+        localStorage.setItem('ramen_name', myName); // 名前記憶
 
         closeConfirm();
-        document.getElementById('login-area').style.display = 'none';
-        document.getElementById('checklist-area').style.display = 'block';
+        document.getElementById('login-view').style.display = 'none';
+        document.getElementById('main-view').style.display = 'block';
+        document.getElementById('footer-bar').style.display = 'flex';
 
-        renderChecklist();
-    }
-
-    function logout() {
-        document.getElementById('checklist-area').style.display = 'none';
-        document.getElementById('login-area').style.display = 'block';
-    }
-
-    // ------------------------------------------
-    // 3. チェックリスト処理
-    // ------------------------------------------
-    function renderChecklist() {
-        const container = document.getElementById('checklist-items');
-        const roleData = ROLES[currentRole];
-        document.getElementById('checklist-title').innerText = roleData.name + " チェック";
+        // 画面構築
+        initChecklists();
         
-        container.innerHTML = "";
+        // サーバーから最新状態を取得（他人の進捗を見るため）
+        fetchState(); 
+    }
 
-        // 保存されたチェック状況を復元
-        let savedChecks = JSON.parse(localStorage.getItem('ramen_checks') || "{}");
-        // キー例: "kitchen-0", "hall-2"
+    // ------------------------------------------
+    // リスト描画（初期化）
+    // ------------------------------------------
+    function initChecklists() {
+        ['kitchen', 'hall', 'wash'].forEach(role => {
+            const container = document.getElementById(`list-${role}`);
+            const area = document.getElementById(`area-${role}`);
+            container.innerHTML = "";
 
-        roleData.items.forEach((item, idx) => {
-            const checkKey = `${currentRole}-${idx}`;
-            const isChecked = savedChecks[checkKey] ? "checked" : "";
-            
-            container.innerHTML += `
-                <label class="check-item">
-                    <input type="checkbox" id="${checkKey}" ${isChecked} onchange="saveCheck('${checkKey}', this.checked)">
-                    <span>${item}</span>
-                </label>
-            `;
+            // 自分の役割なら「操作可能エリア」にする
+            if (role === myRole) {
+                area.classList.remove('disabled-area');
+                area.classList.add('active-area', role);
+            } else {
+                area.classList.add('disabled-area');
+                area.classList.remove('active-area');
+            }
+
+            // 項目生成
+            ROLES[role].forEach((itemText, idx) => {
+                const isChecked = globalState[role].checks[idx] ? "checked" : "";
+                
+                // 他人の役割なら disabled（押せない）にする
+                const disabledAttr = (role === myRole) ? "" : "disabled";
+
+                container.innerHTML += `
+                    <label class="check-item">
+                        <input type="checkbox" id="chk-${role}-${idx}" ${isChecked} ${disabledAttr} onchange="updateState('${role}', ${idx})">
+                        <span>${itemText}</span>
+                    </label>
+                `;
+            });
         });
     }
 
-    // チェックするたびにスマホに保存（誤って閉じてもOK）
-    function saveCheck(key, checked) {
-        let savedChecks = JSON.parse(localStorage.getItem('ramen_checks') || "{}");
-        if (checked) {
-            savedChecks[key] = true;
-        } else {
-            delete savedChecks[key];
-        }
-        localStorage.setItem('ramen_checks', JSON.stringify(savedChecks));
+    // ------------------------------------------
+    // 状態更新（チェックした時）
+    // ------------------------------------------
+    function updateState(role, idx) {
+        if (role !== myRole) return; // 念のため
+
+        // 画面のチェック状態をデータに反映
+        const checkbox = document.getElementById(`chk-${role}-${idx}`);
+        
+        // 配列がなければ初期化
+        if (!globalState[role].checks) globalState[role].checks = [];
+        globalState[role].checks[idx] = checkbox.checked;
+        globalState[role].user = myName;
+
+        // スマホに保存
+        saveLocal();
     }
 
     // ------------------------------------------
-    // 4. 送信処理（B案：自分の分だけ保存）
+    // サーバー同期（更新ボタン）
     // ------------------------------------------
-    async function submitData() {
-        // 全チェック確認
-        const inputs = document.querySelectorAll('#checklist-items input');
-        const allChecked = Array.from(inputs).every(input => input.checked);
-
-        if (!allChecked) return alert("まだチェックされていない項目があります！");
-
-        if (!confirm("完了として報告しますか？")) return;
-
-        const btn = document.querySelector('.submit-btn');
+    async function syncData() {
+        const btn = document.querySelector('.sync-btn');
+        btn.innerText = "通信中...";
         btn.disabled = true;
-        btn.innerText = "送信中...";
 
         try {
+            // 1. 自分のデータを送る
             const payload = {
-                roleName: ROLES[currentRole].name, // 日本語の役割名
-                user: currentName,
-                status: "完了"
+                action: "update",
+                data: {
+                    role: myRole,
+                    checks: globalState[myRole].checks,
+                    user: myName
+                }
             };
 
-            await fetch(GAS_URL, {
+            const res = await fetch(GAS_URL, {
                 method: "POST",
                 body: JSON.stringify(payload)
             });
 
-            alert("お疲れ様でした！記録しました。");
+            // 2. 全員の最新データを受け取る
+            const serverState = await res.json();
             
-            // 送信完了したらログイン画面に戻る
-            logout();
-            loadHistory(); // ダッシュボード更新
+            // 3. データ統合（自分の操作中データが消えないように、他人のデータだけ上書き推奨だが、今回は同期重視でサーバー優先）
+            globalState = serverState;
+            saveLocal();
 
-        } catch(e) {
-            alert("送信エラー。電波を確認してください。");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "✅ 完了報告して保存";
-        }
-    }
+            // 4. 画面再描画（他人のチェック反映）
+            refreshView();
 
-    // ------------------------------------------
-    // 5. 履歴＆ダッシュボード表示
-    // ------------------------------------------
-    async function loadHistory() {
-        if (GAS_URL.includes("★")) return;
-
-        try {
-            const res = await fetch(GAS_URL);
-            const data = await res.json(); // [[日付, 役割, 名前, 状況], ...]
-            
-            const todayStr = new Date().toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\//g, '/');
-            // GASの日付フォーマットに合わせる（yyyy/MM/dd）
-            
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = "";
-
-            // ダッシュボードのリセット
-            ['kitchen', 'hall', 'wash'].forEach(role => {
-                const card = document.getElementById(`card-${role}`);
-                card.classList.remove('done');
-                document.getElementById(`name-${role}`).innerText = "-";
-            });
-
-            // データの走査
-            data.forEach(row => {
-                const date = row[0];
-                const roleName = row[1];
-                const name = row[2];
-                
-                // 今日のデータならダッシュボードに反映
-                if (date === todayStr) {
-                    let key = "";
-                    if (roleName === "1番手") key = "kitchen";
-                    if (roleName === "ホール") key = "hall";
-                    if (roleName === "洗い場") key = "wash";
-
-                    if (key) {
-                        const card = document.getElementById(`card-${key}`);
-                        card.classList.add('done');
-                        document.getElementById(`name-${key}`).innerText = "済: " + name;
-                    }
-                }
-
-                // 履歴リストに追加（今日以外のものも見れるようにするならifを外す）
-                if (date === todayStr) {
-                    let color = "#333";
-                    if (roleName === "1番手") color = "var(--color-kitchen)";
-                    if (roleName === "ホール") color = "var(--color-hall)";
-                    if (roleName === "洗い場") color = "var(--color-wash)";
-
-                    historyList.innerHTML += `
-                        <div class="history-item" style="border-left-color:${color}">
-                            <b>${roleName}</b> - ${name} <span style="float:right; color:green">完了</span>
-                            <div style="font-size:0.7rem; color:#999">${date}</div>
-                        </div>
-                    `;
-                }
-            });
+            alert("更新しました！");
 
         } catch(e) {
             console.error(e);
+            alert("通信エラー。電波を確認してください");
+        } finally {
+            btn.innerText = "🔄 状況を更新・共有する";
+            btn.disabled = false;
         }
     }
 
-    // タブ切り替え
-    function showTab(tabName) {
-        document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        
-        if (tabName === 'main') {
-            document.querySelector('.menu-item:nth-child(1)').classList.add('active');
-            document.getElementById('history-area').style.display = 'none';
-            // ログイン中ならチェックリスト、そうでなければログイン画面
-            if (document.getElementById('checklist-area').style.display === 'block') {
-                 // そのまま
-            } else {
-                document.getElementById('login-area').style.display = 'block';
+    // 読み込み専用（ログイン直後など）
+    async function fetchState() {
+        if(GAS_URL.includes("★")) return;
+        try {
+            const res = await fetch(GAS_URL);
+            const serverState = await res.json();
+            
+            // データ構造のチェック
+            if(serverState.hall) {
+                globalState = serverState;
+                saveLocal();
+                refreshView();
             }
-        } else {
-            document.querySelector('.menu-item:nth-child(2)').classList.add('active');
-            document.getElementById('login-area').style.display = 'none';
-            document.getElementById('checklist-area').style.display = 'none';
-            document.getElementById('history-area').style.display = 'block';
-            loadHistory();
-        }
+        } catch(e) { console.error(e); }
+    }
+
+    // 画面のチェックボックスをデータに合わせて書き換える
+    function refreshView() {
+        ['kitchen', 'hall', 'wash'].forEach(role => {
+            // 担当者名更新
+            document.getElementById(`user-${role}`).innerText = globalState[role].user || "-";
+
+            ROLES[role].forEach((_, idx) => {
+                const checkbox = document.getElementById(`chk-${role}-${idx}`);
+                if (checkbox) {
+                    // データに合わせてチェックを入れる/外す
+                    checkbox.checked = !!globalState[role].checks[idx];
+                }
+            });
+        });
+    }
+
+    function saveLocal() {
+        localStorage.setItem('ramen_state', JSON.stringify(globalState));
     }
 </script>
 </body>
