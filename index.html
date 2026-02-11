@@ -5,16 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ぶっ豚チェックリスト🐖</title>
 <style>
-    /* ぶっ豚カラー（豚骨醤油イメージで少し濃いめにしました） */
+    /* ぶっ豚カラー */
     :root {
         --c-hall: #007bff;
-        --c-kit: #d63384; /* 豚肉っぽいピンク赤 */
+        --c-kit: #d63384;
         --c-wash: #198754;
         --bg: #f8f9fa;
     }
     body { font-family: "Hiragino Kaku Gothic ProN", sans-serif; margin: 0; padding: 0; background: var(--bg); padding-bottom: 120px; }
     
-    /* ヘッダー */
     header { background: white; padding: 15px; text-align: center; border-bottom: 3px solid #333; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     h1 { margin: 0; font-size: 1.4rem; font-weight: 900; color: #333; letter-spacing: 1px; }
 
@@ -31,6 +30,12 @@
     .confirm-btns { display: flex; gap: 10px; margin-top: 20px; }
     .confirm-btns button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
 
+    /* ★全員完了時のオーバーレイ画面 */
+    #all-complete-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 300; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; backdrop-filter: blur(5px); }
+    .complete-msg { font-size: 1.5rem; font-weight: bold; margin-bottom: 30px; line-height: 1.5; color: #333; }
+    .final-btn { width: 100%; max-width: 300px; padding: 20px; background: #e44d26; color: white; border: none; border-radius: 10px; font-size: 1.2rem; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(228, 77, 38, 0.4); animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
     /* メイン画面リスト */
     .list-section { background: white; margin: 15px; border-radius: 12px; overflow: hidden; box-shadow: 0 3px 6px rgba(0,0,0,0.05); border: 1px solid #ddd; }
     .role-header { padding: 12px 15px; color: white; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
@@ -39,15 +44,12 @@
     .check-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; font-size: 1.05rem; }
     input[type="checkbox"] { transform: scale(1.6); margin-right: 15px; cursor: pointer; }
 
-    /* 自分の担当以外 */
     .disabled-area { opacity: 0.5; background: #eee; pointer-events: none; filter: grayscale(80%); }
-    /* 自分の担当 */
     .active-area { border: 2px solid #333; background: #fff; transform: scale(1.01); }
 
-    /* フッターアクションバー */
+    /* フッターアクションバー（更新ボタンのみ） */
     .action-bar { position: fixed; bottom: 60px; left: 0; width: 100%; background: rgba(255,255,255,0.95); padding: 10px 15px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; border-top: 1px solid #ddd; backdrop-filter: blur(5px); }
     .sync-btn { width: 100%; padding: 14px; background: #444; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; }
-    .finish-btn { width: 100%; padding: 14px; background: #e44d26; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 10px rgba(228, 77, 38, 0.3); }
 
     /* 履歴画面 */
     #history-view { display: none; padding: 15px; }
@@ -89,6 +91,16 @@
         </div>
     </div>
 
+    <div id="all-complete-view">
+        <div class="complete-msg">
+            🐖 全項目チェック完了！🐖<br><br>
+            お疲れ様でした！<br>
+            退勤報告をお願いします。
+        </div>
+        <button class="final-btn" onclick="finishAll()">✅ 履歴に保存してクリア</button>
+        <button onclick="closeCompleteView()" style="margin-top:20px; background:none; border:none; color:#666; text-decoration:underline; cursor:pointer;">※まだ修正箇所がある</button>
+    </div>
+
     <div id="main-view">
         <div id="area-kitchen" class="list-section">
             <div class="role-header" style="background:var(--c-kit)">
@@ -113,7 +125,6 @@
 
         <div class="action-bar">
             <button class="sync-btn" onclick="syncData()">🔄 更新（進捗共有）</button>
-            <button class="finish-btn" onclick="finishWork()">✅ 業務終了・履歴へ保存してクリア</button>
         </div>
     </div>
 
@@ -134,10 +145,8 @@
 
 <script>
     // ★新しいGASのURLを入れる★
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbzp4dhte6S6mLANWAef0uznFbMg2RjIfsLCVm-3Bzgp5pdOhXLlZno6_7wbUxZlSXU1/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyS4bqet3JbKS2H3Oh2-_tmmEfiQA-OWiNVeH-2kYjfgrOUZ-Ce6lysRGTaxegMk0iX/exec";
 
-    // チェック項目の設定
-    // ※ここに「コップの片づけ」を追加しました！
     const ROLES = {
         kitchen: ["ガスの元栓閉", "コールドテーブル", "スープ・肉・野菜収納", "補充系完了", "水道閉", "麺残量記入"],
         hall: ["箸醤油、マヨ補充", "生姜閉まったか", "床ゴミ確認", "券売機・鍵閉め", "背脂SWオフ", "卵補充", "ゴミ・トイレ電気", "テーブル全拭き", "コップの片づけ"],
@@ -210,12 +219,44 @@
         });
     }
 
-    // --- データ操作 ---
+    // --- ローカルチェック処理 ---
     function localCheck(role, idx) {
         const chk = document.getElementById(`chk-${role}-${idx}`);
         if(!globalState[role].checks) globalState[role].checks = [];
         globalState[role].checks[idx] = chk.checked;
         globalState[role].user = myName;
+        
+        // 毎回「全員完了したか？」をチェック
+        checkAllComplete();
+    }
+
+    // --- 全員完了判定 ---
+    function checkAllComplete() {
+        let isAllDone = true;
+        
+        ['kitchen', 'hall', 'wash'].forEach(role => {
+            const checks = globalState[role].checks;
+            const total = ROLES[role].length;
+            
+            // チェック数が足りない、またはfalseがある場合
+            if (!checks || checks.length < total) isAllDone = false;
+            else {
+                for(let i=0; i<total; i++) {
+                    if(!checks[i]) isAllDone = false;
+                }
+            }
+        });
+
+        // 全員完了なら画面を出す！
+        if (isAllDone) {
+            document.getElementById('all-complete-view').style.display = 'flex';
+        } else {
+            document.getElementById('all-complete-view').style.display = 'none';
+        }
+    }
+
+    function closeCompleteView() {
+        document.getElementById('all-complete-view').style.display = 'none';
     }
 
     // --- 更新（共有）ボタン ---
@@ -238,6 +279,7 @@
             
             globalState = serverState;
             reflectToView();
+            checkAllComplete(); // 更新時も完了判定する
             
         } catch(e) {
             console.error(e);
@@ -247,47 +289,33 @@
         }
     }
 
-    // --- 完了・クリアボタン ---
-    async function finishWork() {
-        const myChecks = globalState[myRole].checks;
-        const totalItems = ROLES[myRole].length;
-        
-        let isAllChecked = true;
-        if (!myChecks || myChecks.length < totalItems) isAllChecked = false;
-        else {
-            for(let i=0; i<totalItems; i++) {
-                if(!myChecks[i]) isAllChecked = false;
-            }
-        }
+    // --- 一括完了・クリアボタン（アンカーが押す） ---
+    async function finishAll() {
+        if(!confirm("全員分を履歴に保存して、チェックをクリアします。\nよろしいですか？")) return;
 
-        if(!isAllChecked) return alert("まだ未完了の項目があります！");
-        if(!confirm("【確認】\n履歴に保存し、あなたの担当のチェックをクリアしますか？")) return;
-
-        const btn = document.querySelector('.finish-btn');
-        btn.innerText = "保存中...";
+        const btn = document.querySelector('.final-btn');
+        btn.innerText = "処理中...";
         btn.disabled = true;
 
         try {
             const payload = {
-                action: "finish",
-                data: {
-                    role: myRole,
-                    user: myName
-                }
+                action: "finish_all",
+                data: {} // 特になし
             };
             const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
             const serverState = await res.json();
             
             globalState = serverState;
             reflectToView();
-            alert("保存完了！お疲れ様でした🐖");
+            closeCompleteView();
+            alert("全保存完了！\nお疲れ様でした🐖");
             
             switchTab('history');
 
         } catch(e) {
             alert("送信エラー");
         } finally {
-            btn.innerText = "✅ 業務終了・履歴へ保存してクリア";
+            btn.innerText = "✅ 履歴に保存してクリア";
             btn.disabled = false;
         }
     }
